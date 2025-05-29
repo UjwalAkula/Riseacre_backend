@@ -1,11 +1,12 @@
 const express = require('express');
 const admin = require('firebase-admin');
 const UserAuth = require('../models/Authmodel'); // Your User model
+const firebase=require('../Firebase/riseacre-39da0-firebase-adminsdk-49jvk-f4157fe1b5.json');
 const dotenv = require('dotenv');
 
 dotenv.config();
 
-const serviceAccount = process.env.Firebase_service_account_key; // Path to Firebase service account key
+const serviceAccount = firebase; // Path to Firebase service account key
 
 const app = express();
 
@@ -102,6 +103,7 @@ const googleSignIn = async (req, res) => {
     res.status(200).json({
       message: 'Google login successful!',
       user: existingUser,
+      userId: existingUser._id,
       token: idToken,  // Optionally send back the token
     });
   } catch (error) {
@@ -129,6 +131,7 @@ const userSignIn = async (req, res) => {
     res.status(200).json({
       message: 'Sign-in successful!',
       user: existingUser,
+      userId: existingUser._id,
       token: idToken,  // Optionally send back the token
     });
   } catch (error) {

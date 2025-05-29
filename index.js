@@ -19,6 +19,8 @@ const PORT = 4000;
 
 // MongoDB URI from the .env file
 const mongodb_url = process.env.MONGODB_URL;
+console.log("MongoDB URL:", process.env.MONGODB_URL);
+
 
 // Connect to MongoDB
 mongoose.connect(mongodb_url)

@@ -1,26 +1,27 @@
 const express = require('express');
 const multer = require('multer');
 const path = require('path');
-const postProperty = require('../models/Listingmodel');
-const UserAuth = require('../models/Authmodel');
 const PostProperty = require('../models/Listingmodel');
-const Ratings=require('./Ratings');
+const UserAuth = require('../models/Authmodel');
+const Ratings = require('./Ratings');
+const admin = require('firebase-admin');
+const firebase = require('../Firebase/riseacre-39da0-firebase-adminsdk-49jvk-f4157fe1b5.json');
 
 const router = express.Router();
 
 // Set up storage engine for multer
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, 'uploads/');  // Specifies the directory to store images
+    cb(null, 'uploads/'); // Ensure this directory exists
   },
   filename: (req, file, cb) => {
-    cb(null, file.fieldname + '-' + Date.now() + path.extname(file.originalname));  // Ensures unique file names
-  }
+    cb(null, file.fieldname + '-' + Date.now() + path.extname(file.originalname));
+  },
 });
 
 // Check file type to allow only image files (jpeg, jpg, png)
 function checkFileType(file, cb) {
-  const filetypes = /jpeg|jpg|png/;  // Allowed file types
+  const filetypes = /jpeg|jpg|png/;
   const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
   const mimetype = filetypes.test(file.mimetype);
 
@@ -34,72 +35,85 @@ function checkFileType(file, cb) {
 // Multer middleware for uploading images
 const upload = multer({
   storage: storage,
-  limits: { fileSize: 1024 * 1024 * 5, files: 5 },  // Limit to 5 files and max file size 5MB
+  limits: { fileSize: 1024 * 1024 * 5, files: 5 },
   fileFilter: (req, file, cb) => {
     checkFileType(file, cb);
+  },
+}).array('photos', 5);
+
+// Firebase initialization (unchanged)
+if (!admin.apps.length) {
+  admin.initializeApp({
+    credential: admin.credential.cert(firebase),
+  });
+}
+
+const verifyFirebaseToken = async (idToken) => {
+  try {
+    const decodedToken = await admin.auth().verifyIdToken(idToken);
+    return true;
+  } catch (error) {
+    console.error('Error verifying Firebase ID token:', error);
+    return false;
   }
-}).array('photos', 5);  // Accepting up to 5 images
+};
 
 // Property Listing API - POST route
 const listProperty = async (req, res) => {
-  const { 
-    purpose, category, propertyType, constructionType, photos, propertyName, locality, 
-    city, state, PINcode, latitude, longitude, nearbyLandmarks, carpetArea, buildupArea, 
-    amenities, connectivity, expectedPrice, monthlyRent, priceNegotiable, maintenanceCharges, 
-    bookingAmount, description, listerType, builderCompany, builderCertifications, listingType, 
-    listerName, listerPhoneNumber, listerEmail, userId, bhkConfiguration, 
-    floorNumber, totalFloors, noOfBedrooms, noOfBathrooms, noOfHalls, balcony, propertyAge 
+  const {
+    purpose, category, propertyType, constructionType, propertyName, locality,
+    city, state, PINcode, latitude, longitude, nearbyLandmarks, carpetArea, buildupArea,
+    amenities, connectivity, expectedPrice, monthlyRent, priceNegotiable, maintenanceCharges,
+    bookingAmount, description, listerType, builderCompany, builderCertifications, listingType,
+    listerName, listerPhoneNumber, listerEmail, userId, bhkConfiguration,
+    floorNumber, totalFloors, noOfBedrooms, noOfBathrooms, noOfHalls, balcony, propertyAge,
   } = req.body;
 
-  const connectivityRating =Ratings.calculateConnectivity(connectivity);
+  // Get photo paths from uploaded files
+  const photoPaths = req.files ? req.files.map(file => file.filename) : [];
+
+  const connectivityRating = Ratings.calculateConnectivity(connectivity);
   const livabilityRating = Ratings.calculateLivability(amenities);
   const safetyRating = Ratings.calculateSafety(amenities);
 
-
   try {
-    // Create a new property document with the updated fields
-    const newProperty = new postProperty({
-      purpose, category, propertyType, constructionType, photos, propertyName, locality, 
-      city, state, PINcode, latitude, longitude, nearbyLandmarks, carpetArea, buildupArea, 
-      amenities, connectivity, expectedPrice, monthlyRent, priceNegotiable, maintenanceCharges, 
-      bookingAmount, description, listerType, builderCompany, builderCertifications, listingType, 
-      listerName, listerPhoneNumber, listerEmail, userId, bhkConfiguration, 
+    const newProperty = new PostProperty({
+      purpose, category, propertyType, constructionType, propertyName, locality,
+      city, state, PINcode, latitude, longitude, nearbyLandmarks, carpetArea, buildupArea,
+      amenities, connectivity, expectedPrice, monthlyRent, priceNegotiable, maintenanceCharges,
+      bookingAmount, description, listerType, builderCompany, builderCertifications, listingType,
+      listerName, listerPhoneNumber, listerEmail, userId, bhkConfiguration,
       floorNumber, totalFloors, noOfBedrooms, noOfBathrooms, noOfHalls, balcony, propertyAge,
-      connectivityRating,livabilityRating,safetyRating
+      photos: photoPaths, // Use req.files instead of req.body.photos
+      connectivityRating, livabilityRating, safetyRating,
     });
 
-    // Save the property to the database
     await newProperty.save();
 
-    // Update the UserAuth model to link this listing to the user
     await UserAuth.findByIdAndUpdate(
       userId,
       { $push: { listings: newProperty._id } },
       { new: true }
     );
 
-    // Respond with success
     res.status(200).json({
-      
       responsefromserver: "Property listed successfully",
-      ListedProperty: newProperty
+      ListedProperty: newProperty,
     });
   } catch (error) {
     console.error('Error while listing property:', error);
     res.status(500).json({
       responsefromserver: "Internal Server Error.",
-      Error: error.message
+      Error: error.message,
     });
   }
 };
 
-// Get all properties API
+// Other routes (unchanged)
 const getAllProperties = async (req, res) => {
-
-
   try {
-    const properties = await postProperty.find();
-    const totalProperties = await postProperty.countDocuments();
+    const properties = await PostProperty.find();
+    const totalProperties = await PostProperty.countDocuments();
 
     if (!properties || properties.length === 0) {
       return res.status(400).json({ responsefromserver: "No properties found." });
@@ -108,87 +122,76 @@ const getAllProperties = async (req, res) => {
     res.status(200).json({
       responsefromserver: "Properties are found",
       properties,
-      totalProperties
+      totalProperties,
     });
   } catch (error) {
     console.error('Error while fetching properties:', error);
     res.status(500).json({
       responsefromserver: "Internal Server Error.",
-      Error: error.message
+      Error: error.message,
     });
   }
 };
 
-// Get property by id
-const getPropertyById=async(req,res)=>{
-  const propertyId=req.params.id;
+const getPropertyById = async (req, res) => {
+  const propertyId = req.params.id;
 
-  try{
-    const property=await PostProperty.findById(propertyId);
-
-    if(!property){
-      return res.status(400).json({responsefromserver:'Property not found.'});
+  try {
+    const property = await PostProperty.findById(propertyId);
+    if (!property) {
+      return res.status(400).json({ responsefromserver: 'Property not found.' });
     }
-
-    res.status(200).json({responsefromserver:'property is found.',property});
-  }catch(error){
-    res.status(500).json({responsefromserver:'Internal Server Error',Error:error});
+    res.status(200).json({ responsefromserver: 'Property is found.', property });
+  } catch (error) {
+    res.status(500).json({ responsefromserver: 'Internal Server Error', Error: error });
     console.error(error);
   }
 };
 
-//update property by id
 const updatePropertyById = async (req, res) => {
   const propertyId = req.params.id;
   const updatedData = req.body;
 
   if (updatedData.connectivity) {
     const connectivityRating = Ratings.calculateConnectivity(updatedData.connectivity);
-    updatedData = { ...updatedData, connectivityRating };
+    updatedData.connectivityRating = connectivityRating;
   }
 
   if (updatedData.amenities) {
     const livabilityRating = Ratings.calculateLivability(updatedData.amenities);
     const safetyRating = Ratings.calculateSafety(updatedData.amenities);
-    updatedData = { ...updatedData, livabilityRating, safetyRating };
+    updatedData.livabilityRating = livabilityRating;
+    updatedData.safetyRating = safetyRating;
   }
 
   try {
-    const updatedProperty = await postProperty.findByIdAndUpdate(propertyId, updatedData, { new: true });
+    const updatedProperty = await PostProperty.findByIdAndUpdate(propertyId, updatedData, { new: true });
     if (!updatedProperty) {
       return res.status(404).json({ responsefromserver: 'Property not found.' });
     }
-
     res.status(200).json({
       responsefromserver: 'Property updated successfully.',
-      updatedProperty
+      updatedProperty,
     });
   } catch (error) {
     console.error('Error while updating property:', error);
     res.status(500).json({
       responsefromserver: 'Internal Server Error.',
-      Error: error.message
+      Error: error.message,
     });
   }
 };
 
-
-// Delete Property by ID API
 const deletePropertyById = async (req, res) => {
   const propertyId = req.params.id;
 
   try {
-    // Delete the property from the database
-    const deletedProperty = await postProperty.findByIdAndDelete(propertyId);
-
+    const deletedProperty = await PostProperty.findByIdAndDelete(propertyId);
     if (!deletedProperty) {
       return res.status(400).json({ responsefromserver: "Property not found so cannot be deleted." });
     }
 
-    // Get the userId from the deleted property
     const userId = deletedProperty.userId;
-
-    // Remove the propertyId from the user's listings array
     const user = await UserAuth.findByIdAndUpdate(
       userId,
       { $pull: { listings: propertyId } },
@@ -196,25 +199,27 @@ const deletePropertyById = async (req, res) => {
     );
 
     if (!user) {
-      return res.status(400).json({
-        responsefromserver: "User not found, cannot update listings."
-      });
+      return res.status(400).json({ responsefromserver: "User not found, cannot update listings." });
     }
 
-    // Respond with success
     res.status(200).json({
-      responsefromserver: "Property deleted successfully and user's listings updated."
+      responsefromserver: "Property deleted successfully and user's listings updated.",
     });
   } catch (error) {
     console.error('Error during property deletion:', error);
     res.status(500).json({
       responsefromserver: "Internal Server Error.",
-      Error: error.message
+      Error: error.message,
     });
   }
 };
 
-// Export the router
-module.exports = { postProperty: [upload, listProperty], getAllProperties,getPropertyById,updatePropertyById, deletePropertyById };
-
-
+// Export separately
+module.exports = {
+  postProperty: listProperty, // Handler
+  upload, // Middleware
+  getAllProperties,
+  getPropertyById,
+  updatePropertyById,
+  deletePropertyById,
+};

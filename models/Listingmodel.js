@@ -102,6 +102,8 @@ const listingschema = new mongoose.Schema({
       airport: { type: Number, required: true },
       busStation: { type: Number, required: true },
       railwayStation: { type: Number, required: true },
+      school: { type: Number},
+      hospital: { type: Number}
     },
     required: true,
   },
@@ -130,7 +132,7 @@ const listingschema = new mongoose.Schema({
   listerType: {
     type: String,
     required: true,
-    enum: ['Owner', 'Broker', 'Constructor/Builder/Developer'],
+    enum: ['Owner', 'Broker', 'Builder'],
   },
   builderCompany: {
     type: String,
@@ -142,7 +144,7 @@ const listingschema = new mongoose.Schema({
   // Listing Type (Optional/Subscription)
   listingType: {
     type: String,
-    enum: ['Normal', 'Premium', 'Featured', 'Highlighted'],
+    enum: ['Basic', 'Premium', 'Featured'],
   },
   listerName: {
     type: String,
