@@ -1,12 +1,12 @@
 const express = require('express');
 const admin = require('firebase-admin');
 const UserAuth = require('../models/Authmodel'); // Your User model
-const firebase=require('../Firebase/riseacre-39da0-firebase-adminsdk-49jvk-f4157fe1b5.json');
 const dotenv = require('dotenv');
 
 dotenv.config();
 
-const serviceAccount = firebase; // Path to Firebase service account key
+const serviceAccount = JSON.parse(process.env.FIREBASE_CONFIG_JSON);
+ // Path to Firebase service account key
 
 const app = express();
 
