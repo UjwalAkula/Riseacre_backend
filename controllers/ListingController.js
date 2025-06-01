@@ -5,7 +5,10 @@ const PostProperty = require('../models/Listingmodel');
 const UserAuth = require('../models/Authmodel');
 const Ratings = require('./Ratings');
 const admin = require('firebase-admin');
-const firebase = require('../Firebase/riseacre-39da0-firebase-adminsdk-49jvk-f4157fe1b5.json');
+const dotenv = require('dotenv');
+
+dotenv.config();
+const firebase = JSON.parse(process.env.FIREBASE_CONFIG_JSON);
 
 const router = express.Router();
 

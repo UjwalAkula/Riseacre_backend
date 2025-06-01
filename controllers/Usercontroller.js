@@ -2,13 +2,14 @@ const express = require('express');
 const User = require('../models/Usermodel');
 const jwt = require('jsonwebtoken');
 const dotenv = require('dotenv');
-const admin = require('firebase-admin'); // Firebase Admin SDK
-const serviceAccount = require('../Firebase/riseacre-39da0-firebase-adminsdk-49jvk-f4157fe1b5.json'); // Path to Firebase service account key
+const admin = require('firebase-admin'); // Firebase Admin SDK account key
 
 const app = express();
 app.use(express.json());
 
 dotenv.config();
+
+const serviceAccount = JSON.parse(process.env.FIREBASE_CONFIG_JSON);
 
 // Initialize Firebase Admin SDK with your credentials
 admin.initializeApp({
