@@ -15,7 +15,6 @@ This repository contains the **Riseacre Backend API**, a robust and scalable ser
 
   * **User Authentication & Session Management:** Secure user registration, login, and session management using cookies.
   * **Property Listing Management:** Full CRUD (Create, Read, Update, Delete) functionality for property listings.
-  * **User Profile Management:** APIs for creating, viewing, and updating user profiles.
   * **Ratings & Reviews System:** Functionality to submit and retrieve ratings.
   * **Location Services Integration:** Uses Google Maps Autocomplete API for location input.
   * **Image Uploads:** Handles storage of property photos.
@@ -106,8 +105,7 @@ The Riseacre Backend is deployed live on **Render** at [https://riseacre.onrende
 
 -----
 
-## License
-
-This project is licensed under the [SELECT-A-LICENSE](https://choosealicense.com/licenses) License. See the `LICENSE` file in the repository for details.
+## 💡 Inspiration
+This project was inspired by the functionality and features commonly found in online real estate platforms like Housing.com.
 
 -----
