@@ -1,12 +1,3 @@
-  * **`p align="center"` and `img src="..."` for badges and images:** These are purely for **visual appeal and aesthetics**. They make the README look professional and provide quick visual cues about the project's status (license, last commit, top language). While nice to have, they don't convey essential *textual* information that isn't already covered in the body of the README.
-  * **The image at the top:** `<img src="[suspicious link removed]" align="center" width="30%">` is likely just a decorative icon for the README.
-  * **The "Deploy to Render" and "Live Demo" buttons:** These are very helpful for quick access to your deployed project, so I'd recommend keeping the *links* to them, but the image badges themselves are for presentation.
-
-**If you want a truly minimal and information-only README, you can safely remove all the `<p align="center">` blocks containing `<img>` tags.**
-
-**Here's the extremely stripped-down version without any image badges or decorative elements:**
-
------
 
 # RISEACRE\_BACKEND
 
