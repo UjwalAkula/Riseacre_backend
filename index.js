@@ -12,7 +12,7 @@ const app = express();
 dotenv.config();
 
 const corsOptions = {
-  origin: ['https://riseacre.vercel.app', 'http://localhost:3000'],
+  origin: ['https://riseacre.vercel.app', 'http://localhost:5173'],
   credentials: true,
 };
 
