@@ -11,8 +11,13 @@ const app = express();
 // Load environment variables from .env file
 dotenv.config();
 
-// Set up CORS - allows all origins by default (can be more restrictive in production)
-app.use(cors());
+const corsOptions = {
+  origin: ['https://riseacre.vercel.app', 'http://localhost:3000'],
+  credentials: true,
+};
+
+app.use(cors(corsOptions));
+
 
 // Define the port
 const PORT = 4000;
