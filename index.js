@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const mongoose = require('mongoose');
-const Userroutes = require('./routes/Userroutes');  // Ensure this is the correct path
+const Userroutes = require('./routes/Userroutes');  
 const Postroutes=require('./routes/Postroutes')
 
 // Initialize the app
