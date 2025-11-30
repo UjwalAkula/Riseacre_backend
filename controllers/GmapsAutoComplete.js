@@ -14,7 +14,9 @@ const gmapsApi = async (req, res) => {
   }
 
   try {
-    const url = `https://maps.gomaps.pro/maps/api/place/queryautocomplete/json?input=${encodeURIComponent(inputfromsearch)}&key=${gmapKey}`;
+
+    const url = `https://api.geoapify.com/v1/geocode/autocomplete?text=${encodeURIComponent(inputfromsearch)}&limit=5&apiKey=${gmapKey}`;
+
     const response = await fetch(url);
 
     if (!response.ok) {
@@ -27,14 +29,21 @@ const gmapsApi = async (req, res) => {
 
     const data = await response.json();
 
-    if (data.status !== 'OK') {
+
+    if (!data.features) {
       return res.status(400).json({
         responsefromserver: 'Google Maps API did not return successful data.',
-        error: data.error_message || 'Unknown API error'
+        error: 'Invalid Geoapify response'
       });
     }
 
-    res.status(200).json({ possiblePredictions: data.predictions || [] });
+    res.status(200).json({
+      possiblePredictions: data.features.map((f) => ({
+        description: f.properties.formatted,
+        lat: f.properties.lat,
+        lon: f.properties.lon,
+      })),
+    });
 
   } catch (error) {
     console.error('Error:', error);
