@@ -11,12 +11,15 @@ const app = express();
 // Load environment variables from .env file
 dotenv.config();
 
-const corsOptions = {
+app.use(cors({
   origin: ['https://riseacre.vercel.app', 'http://localhost:5173'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
-};
+}));
 
-app.use(cors(corsOptions));
+
+app.options('*', cors());
 
 
 // Define the port
