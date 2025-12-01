@@ -8,7 +8,13 @@ const admin = require('firebase-admin');
 const dotenv = require('dotenv');
 
 dotenv.config();
-const firebase = JSON.parse(process.env.FIREBASE_CONFIG_JSON);
+let firebase = {};
+try {
+  firebase = JSON.parse(process.env.FIREBASE_CONFIG_JSON || "{}");
+  } catch (err) {
+    console.error("Invalid FIREBASE_CONFIG_JSON:", err);
+  }
+
 
 const router = express.Router();
 
