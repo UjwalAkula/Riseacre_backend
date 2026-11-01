@@ -1,67 +1,61 @@
-const calculateConnectivity = (connectivity) => {
-  let score = 0;
+const METHOD_VERSION = '1.0';
 
-  if (connectivity.metro <= 1) score += 5;
-  else if (connectivity.metro <= 5) score += 4;
-  else if (connectivity.metro <= 10) score += 3;
-  else score += 2;
+const validDistance = (value) => value !== null && value !== undefined && !(typeof value === 'string' && value.trim() === '') && Number.isFinite(Number(value)) && Number(value) >= 0;
 
-  if (connectivity.airport <= 1) score += 5;
-  else if (connectivity.airport <= 5) score += 4;
-  else if (connectivity.airport <= 10) score += 3;
-  else score += 2;
-
-  if (connectivity.busStation <= 1) score += 5;
-  else if (connectivity.busStation <= 5) score += 4;
-  else if (connectivity.busStation <= 10) score += 3;
-  else score += 2;
-
-  if (connectivity.railwayStation <= 1) score += 5;
-  else if (connectivity.railwayStation <= 5) score += 4;
-  else if (connectivity.railwayStation <= 10) score += 3;
-  else score += 2;
-
-  return Math.min(5, score / 4); // Normalize the score between 1-5
+const bandScore = (value, bands) => {
+  const distance = Number(value);
+  return bands.find(({ max }) => distance <= max)?.score ?? 1;
 };
 
-// Calculate Livability Rating based on amenities
-const calculateLivability = (amenities) => {
-  const essentialAmenities = [
-    'Swimming Pool', 'Gym', 'Parking', 'Wi-Fi', 'Intercom', 'Laundry', 'Security', 'Fire Extinguisher', 'Balcony'
-  ];
-  
-  let score = 0;
-
-  // Add score for each essential amenity present
-  essentialAmenities.forEach((amenity) => {
-    if (amenities.includes(amenity)) score += 1;
-  });
-
-  // Calculate rating based on the number of essential amenities present
-  if (score >= 8) return 5;
-  if (score >= 6) return 4;
-  if (score >= 4) return 3;
-  if (score >= 2) return 2;
-  return 1;
+const scoreBands = {
+  metro: [{ max: 1, score: 5 }, { max: 3, score: 4 }, { max: 5, score: 3 }, { max: 10, score: 2 }],
+  busStation: [{ max: 0.5, score: 5 }, { max: 1, score: 4 }, { max: 3, score: 3 }, { max: 5, score: 2 }],
+  railwayStation: [{ max: 2, score: 5 }, { max: 5, score: 4 }, { max: 10, score: 3 }, { max: 20, score: 2 }],
+  school: [{ max: 1, score: 5 }, { max: 3, score: 4 }, { max: 5, score: 3 }, { max: 10, score: 2 }],
+  hospital: [{ max: 1, score: 5 }, { max: 3, score: 4 }, { max: 5, score: 3 }, { max: 10, score: 2 }],
 };
 
-// Calculate Safety Rating based on safety-related amenities
-const calculateSafety = (amenities) => {
-  const safetyFeatures = [
-    'CCTV', '24/7 Security', 'Fire Extinguisher', 'Smoke Detectors', 'Gated Community', 'Security Guards'
-  ];
+const roundOneDecimal = (value) => Math.round(value * 10) / 10;
 
-  let score = 0;
+/**
+ * Riseacre Location Convenience Index v1.0.
+ * Distances are supplied by the listing author and have not been independently verified.
+ * Three transit factors and at least one daily-needs factor are required to publish a score.
+ * Airport distance is deliberately excluded from the daily convenience calculation.
+ */
+const calculateLocationConvenience = (connectivity) => {
+  const fields = ['metro', 'busStation', 'railwayStation', 'school', 'hospital'];
+  const transitFields = ['metro', 'busStation', 'railwayStation'];
+  const serviceFields = ['school', 'hospital'];
+  const transitCoverage = transitFields.filter((field) => validDistance(connectivity?.[field])).length * 20;
+  const serviceCoverage = serviceFields.filter((field) => validDistance(connectivity?.[field])).length * 20;
+  const coveragePercent = transitCoverage + serviceCoverage;
+  const breakdown = Object.fromEntries(fields.map((field) => [
+    field,
+    validDistance(connectivity?.[field]) ? bandScore(connectivity[field], scoreBands[field]) : null,
+  ]));
+  const transitComplete = transitFields.every((field) => breakdown[field] !== null);
+  const dailyNeedsPresent = serviceFields.some((field) => breakdown[field] !== null);
 
-  safetyFeatures.forEach((feature) => {
-    if (amenities.includes(feature)) score += 1;
-  });
+  if (!transitComplete || !dailyNeedsPresent) {
+    return {
+      score: null,
+      coveragePercent,
+      methodVersion: METHOD_VERSION,
+      breakdown,
+    };
+  }
 
-  if (score >= 5) return 5;
-  if (score >= 4) return 4;
-  if (score >= 3) return 3;
-  if (score >= 2) return 2;
-  return 1;
+  const transitScore = transitFields.reduce((sum, field) => sum + breakdown[field], 0) / transitFields.length;
+  const dailyNeedsScores = serviceFields.filter((field) => breakdown[field] !== null).map((field) => breakdown[field]);
+  const dailyNeedsScore = dailyNeedsScores.reduce((sum, value) => sum + value, 0) / dailyNeedsScores.length;
+  const score = roundOneDecimal((transitScore * 0.6) + (dailyNeedsScore * 0.4));
+  return {
+    score,
+    coveragePercent,
+    methodVersion: METHOD_VERSION,
+    breakdown,
+  };
 };
 
-module.exports={calculateConnectivity,calculateLivability,calculateSafety};
+module.exports = { calculateLocationConvenience, METHOD_VERSION };

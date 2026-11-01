@@ -17,12 +17,18 @@ const userauthschema = new mongoose.Schema({
   firebaseUid: {
     type: String,
     required: true,  // This makes firebaseUid a required field
-  },
-  listings:[{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'PostProperty'
-  }]
-}, { timestamps: true });
+  }
+}, {
+  timestamps: true,
+  toJSON: { virtuals: true },
+  toObject: { virtuals: true },
+});
+
+userauthschema.virtual('listings', {
+  ref: 'PostProperty',
+  localField: '_id',
+  foreignField: 'userId',
+});
 
 const UserAuth = mongoose.model('UserAuth', userauthschema, 'myactivity');
 

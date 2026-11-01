@@ -27,12 +27,16 @@ const listingschema = new mongoose.Schema({
   },
   bhkConfiguration: {
     type: [String], // Array of BHK types (e.g., ["2BHK", "3BHK"])
-    required: true,
+    required: function () {
+      return ['Flat/Apartment', 'Independent House/Villa', 'Farmhouse'].includes(this.propertyType);
+    },
     enum: ['Studio', '1BHK', '2BHK', '3BHK', '4BHK', '5BHK', 'Penthouse'],
   },
   constructionType: {
     type: String,
-    required: true,
+    required: function () {
+      return this.propertyType !== 'Plot/Land';
+    },
     enum: ['Ready to Move', 'Under Construction'],
   },
   
@@ -50,8 +54,9 @@ const listingschema = new mongoose.Schema({
     required: true,
   },
   PINcode: {
-    type: Number,
+    type: String,
     required: true,
+    match: [/^\d{6}$/, 'Enter a valid 6-digit PIN code.'],
   },
   latitude: {
     type: Number,
@@ -81,9 +86,13 @@ const listingschema = new mongoose.Schema({
   // Price and Rent Details
   expectedPrice: {
     type: Number,
+    required: function () { return this.purpose === 'Sell'; },
+    min: [1, 'Expected price must be greater than zero.'],
   },
   monthlyRent: {
     type: Number,
+    required: function () { return this.purpose === 'Lease'; },
+    min: [1, 'Monthly rent must be greater than zero.'],
   },
   priceNegotiable: {
     type: Boolean,
@@ -98,12 +107,12 @@ const listingschema = new mongoose.Schema({
   // Connectivity Details
   connectivity: {
     type: {
-      metro: { type: Number, required: true },
-      airport: { type: Number, required: true },
-      busStation: { type: Number, required: true },
-      railwayStation: { type: Number, required: true },
-      school: { type: Number},
-      hospital: { type: Number}
+      metro: { type: Number, required: true, min: 0 },
+      airport: { type: Number, min: 0 },
+      busStation: { type: Number, required: true, min: 0 },
+      railwayStation: { type: Number, required: true, min: 0 },
+      school: { type: Number, min: 0 },
+      hospital: { type: Number, min: 0 }
     },
     required: true,
   },
@@ -146,16 +155,31 @@ const listingschema = new mongoose.Schema({
     type: String,
     enum: ['Basic', 'Premium', 'Featured'],
   },
+  listingStatus: {
+    type: String,
+    enum: ['Active', 'Unavailable', 'Sold', 'Rented'],
+    default: 'Active',
+  },
+  availabilityConfirmedAt: {
+    type: Date,
+  },
   listerName: {
     type: String,
     required: true,
   },
   listerPhoneNumber: {
-    type: Number,
+    type: String,
     required: true,
+    match: [/^\d{10}$/, 'Enter a valid 10-digit phone number.'],
   },
   listerEmail: {
     type: String,
+    trim: true,
+    match: [/^[^\s@]+@[^\s@]+\.[^\s@]+$/, 'Enter a valid lister email address.'],
+  },
+  allowPhoneContact: {
+    type: Boolean,
+    default: true,
   },
 
   // User Information
@@ -197,6 +221,18 @@ const listingschema = new mongoose.Schema({
     type: Number,
     min: 1,
     max: 5,
+  },
+  locationConvenience: {
+    score: { type: Number, min: 1, max: 5, default: null },
+    coveragePercent: { type: Number, min: 0, max: 100, default: 0 },
+    methodVersion: { type: String, default: '1.0' },
+    breakdown: {
+      metro: { type: Number, min: 1, max: 5, default: null },
+      busStation: { type: Number, min: 1, max: 5, default: null },
+      railwayStation: { type: Number, min: 1, max: 5, default: null },
+      school: { type: Number, min: 1, max: 5, default: null },
+      hospital: { type: Number, min: 1, max: 5, default: null },
+    },
   }
 
 }, { timestamps: true });

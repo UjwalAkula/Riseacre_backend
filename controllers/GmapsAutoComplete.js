@@ -1,16 +1,19 @@
 const express = require('express');
 const dotenv = require('dotenv');
-const fetch = require('node-fetch');
 
 dotenv.config();
 
-const gmapKey = process.env.gmaps_api_key;
+const gmapKey = process.env.MAPS_API_KEY || process.env.gmaps_api_key;
 
 const gmapsApi = async (req, res) => {
   const inputfromsearch = req.params.input;
 
   if (!inputfromsearch) {
     return res.status(400).json({ responsefromserver: 'Input parameter is missing' });
+  }
+
+  if (!gmapKey) {
+    return res.status(503).json({ responsefromserver: 'Location search is not configured.' });
   }
 
   try {
